@@ -1,0 +1,53 @@
+{
+  "name": "@dripstyle/presets",
+  "version": "1.0.0",
+  "description": "Design system presets for @dripstyle/core",
+  "keywords": [
+    "react-native",
+    "design-system",
+    "theme",
+    "preset",
+    "tokens",
+    "tailwind",
+    "typography",
+    "colors",
+    "spacing"
+  ],
+  "homepage": "https://github.com/ItsLhuis/dripstyle/tree/main/packages/presets#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ItsLhuis/dripstyle",
+    "directory": "packages/presets"
+  },
+  "license": "MIT",
+  "author": "ItsLhuis",
+  "exports": {
+    "./tailwind": {
+      "types": "./dist/tailwind/index.d.ts",
+      "import": "./dist/tailwind/index.js",
+      "require": "./dist/tailwind/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "bump:patch": "tsx ../../scripts/bump-version.ts patch",
+    "bump:minor": "tsx ../../scripts/bump-version.ts minor",
+    "bump:major": "tsx ../../scripts/bump-version.ts major"
+  },
+  "peerDependencies": {
+    "@dripstyle/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@dripstyle/core": "workspace:*",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}

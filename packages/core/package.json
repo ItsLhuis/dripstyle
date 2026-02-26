@@ -1,0 +1,72 @@
+{
+  "name": "@dripstyle/core",
+  "version": "1.0.0",
+  "description": "Pure, type-safe, extensible React Native styling engine",
+  "keywords": [
+    "react-native",
+    "styling",
+    "stylesheet",
+    "theme",
+    "typescript",
+    "design-system",
+    "variants",
+    "responsive",
+    "animation",
+    "reanimated"
+  ],
+  "homepage": "https://github.com/ItsLhuis/dripstyle/tree/main/packages/core#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ItsLhuis/dripstyle",
+    "directory": "packages/core"
+  },
+  "license": "MIT",
+  "author": "ItsLhuis",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "bump:patch": "tsx ../../scripts/bump-version.ts patch",
+    "bump:minor": "tsx ../../scripts/bump-version.ts minor",
+    "bump:major": "tsx ../../scripts/bump-version.ts major"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "react": "*",
+    "react-native": "*"
+  },
+  "peerDependenciesMeta": {
+    "react-native-reanimated": {
+      "optional": true
+    },
+    "react-native-safe-area-context": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "culori": "^4.0.2"
+  },
+  "devDependencies": {
+    "@types/culori": "^4.0.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}

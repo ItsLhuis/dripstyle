@@ -1,0 +1,10 @@
+packages:
+  - packages/*
+  - example/
+
+nodeLinker: hoisted
+
+publicHoistPattern:
+  - typescript
+  - '*eslint*'
+  - '*prettier*'
