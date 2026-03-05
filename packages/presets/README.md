@@ -39,17 +39,35 @@ pnpm add @dripstyle/core @dripstyle/presets
 Every preset exports at minimum a `preset` object with a `themes` property:
 
 ```typescript
+// app/_layout.tsx
 import { StyleSheet } from "@dripstyle/core"
 
 import { preset } from "@dripstyle/presets/tailwind"
 
 StyleSheet.configure({
-  themes: preset.themes
+  themes: preset.themes,
+  breakpoints: preset.breakpoints
 })
 ```
 
-Presets may also export `breakpoints`, a raw `palette`, or other utilities — see each preset's own
-README for details.
+To enable full TypeScript inference, extend `DripstyleThemes` and `DripstyleBreakpoints` via module
+augmentation. The recommended place is a dedicated declaration file:
+
+```typescript
+// types/dripstyle.d.ts
+import { preset } from "@dripstyle/presets/tailwind"
+
+type AppThemes = typeof preset.themes
+type AppBreakpoints = typeof preset.breakpoints
+
+declare module "@dripstyle/core" {
+  export interface DripstyleThemes extends AppThemes {}
+  export interface DripstyleBreakpoints extends AppBreakpoints {}
+}
+```
+
+Presets may also export a raw `palette` or other utilities — see each preset's own README for
+details.
 
 ---
 
@@ -80,13 +98,13 @@ export const preset = {
 }
 ```
 
-Pass it to `StyleSheet.configure()` exactly like an official preset, then augment `Register` to
-enable type inference:
+Pass it to `StyleSheet.configure()` exactly like an official preset, then extend `DripstyleThemes`
+(and optionally `DripstyleBreakpoints`) to enable type inference:
 
 ```typescript
+type AppThemes = typeof preset.themes
+
 declare module "@dripstyle/core" {
-  interface Register {
-    themes: typeof preset.themes
-  }
+  export interface DripstyleThemes extends AppThemes {}
 }
 ```

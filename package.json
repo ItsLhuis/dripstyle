@@ -31,7 +31,7 @@
     "node": ">=24.0.0",
     "pnpm": ">=10.23.0"
   },
-  "packageManager": "pnpm@10.23.0",
+  "packageManager": "pnpm@10.30.3",
   "pnpm": {
     "overrides": {
       "typescript": "^5.9.3"
