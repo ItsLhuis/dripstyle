@@ -1,0 +1,54 @@
+name: ✨ Feature Request
+description: Suggest a new feature for dripstyle
+title: "[Feature]: Brief description"
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Which package would this feature be for?
+      options:
+        - "@dripstyle/core"
+        - "@dripstyle/presets"
+        - Both
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this solve?
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this to work?
+      placeholder: I would like to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other solutions you've considered
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Code examples, mockups, or other information
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues
+          required: true

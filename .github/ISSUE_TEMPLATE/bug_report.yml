@@ -1,0 +1,78 @@
+name: 🐛 Bug Report
+description: Report a bug in dripstyle
+title: "[Bug]: Brief description"
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Which package is affected?
+      options:
+        - "@dripstyle/core"
+        - "@dripstyle/presets"
+        - example app
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Clear description of the bug
+      placeholder: When I do X, Y happens...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Configure StyleSheet with...
+        2. Call useStyles with...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: React Native version, Expo version, platform, package version
+      placeholder: |
+        - @dripstyle/core: 1.0.0
+        - React Native: 0.76.0
+        - Expo: 54.0.0
+        - Platform: iOS / Android / Web
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Package Version
+      placeholder: e.g., 1.0.2
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Screenshots, logs, or other relevant information
+      placeholder: Add any other context here...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues
+          required: true
