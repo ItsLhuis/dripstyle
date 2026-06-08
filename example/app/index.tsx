@@ -11,6 +11,16 @@ const EXAMPLES = [
     description: "Wardrobe desk with planning, inventory, themes and live preview"
   },
   {
+    route: "/reactivity",
+    title: "Reactivity — selective re-render",
+    description: "Per-card render counters proving useStyles re-renders only on the deps it reads"
+  },
+  {
+    route: "/reanimated",
+    title: "Reanimated — animated theme",
+    description: "useAnimatedTheme() easing theme colors on the UI thread vs useStyles snapping"
+  },
+  {
     route: "/benchmark/rn-stylesheet",
     title: "React Native StyleSheet",
     description: "RN StyleSheet.create({}) — baseline, no dripstyle overhead"

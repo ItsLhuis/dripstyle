@@ -19,6 +19,8 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="index" options={{ title: "Examples" }} />
           <Stack.Screen name="showcase" options={{ title: "Dripstyle Showcase" }} />
+          <Stack.Screen name="reactivity" options={{ title: "Reactivity (selective re-render)" }} />
+          <Stack.Screen name="reanimated" options={{ title: "Reanimated (animated theme)" }} />
           <Stack.Screen name="benchmark" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
