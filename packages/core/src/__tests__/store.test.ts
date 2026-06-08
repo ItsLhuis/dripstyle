@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 
+import { clearAllListeners, subscribe as subscribeBus } from "../reactivity"
+
 import {
   assertNotConfiguredAfterMount,
   getStore,
@@ -22,6 +24,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  clearAllListeners()
 })
 
 describe("getStore", () => {
@@ -119,6 +122,60 @@ describe("subscribe", () => {
 
     expect(first).not.toHaveBeenCalled()
     expect(second).toHaveBeenCalledOnce()
+  })
+})
+
+describe("setStore theme bus emits", () => {
+  test("emits theme when the active theme name changes", () => {
+    const listener = vi.fn()
+    subscribeBus(["theme"], listener)
+
+    setStore({ activeThemeName: "dark" })
+
+    expect(listener).toHaveBeenCalledWith("theme")
+  })
+
+  test("emits theme when registered themes change", () => {
+    const listener = vi.fn()
+    subscribeBus(["theme"], listener)
+
+    setStore({ registeredThemes: { light: {} } })
+
+    expect(listener).toHaveBeenCalledWith("theme")
+  })
+
+  test("emits theme when the adaptive flag changes", () => {
+    const listener = vi.fn()
+    subscribeBus(["theme"], listener)
+
+    setStore({ adaptiveThemes: true })
+
+    expect(listener).toHaveBeenCalledWith("theme")
+  })
+
+  test("does not emit theme when only non-theme fields change", () => {
+    const listener = vi.fn()
+    subscribeBus(["theme"], listener)
+
+    setStore({ isConfigured: true })
+
+    expect(listener).not.toHaveBeenCalled()
+  })
+})
+
+describe("setStore breakpoint ordering", () => {
+  test("precomputes ascending sorted breakpoint names when breakpoints change", () => {
+    setStore({ breakpoints: { md: 768, xs: 0, sm: 640 } })
+
+    expect(getStore().sortedBreakpoints).toEqual(["xs", "sm", "md"])
+  })
+
+  test("resets sorted breakpoints to empty on resetStore", () => {
+    setStore({ breakpoints: { xs: 0, md: 768 } })
+
+    resetStore()
+
+    expect(getStore().sortedBreakpoints).toEqual([])
   })
 })
 

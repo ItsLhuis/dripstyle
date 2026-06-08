@@ -9,15 +9,11 @@ import { ThemeProvider } from "../context"
 
 import { StyleSheet } from "../stylesheet"
 
-import {
-  Runtime,
-  resetRuntimeForTests,
-  subscribeRuntime,
-  updateInsets,
-  useRuntime
-} from "../runtime"
+import { Runtime, resetRuntimeForTests, updateInsets, useRuntime } from "../runtime"
 
-import { resetStore } from "../store"
+import { subscribe as subscribeBus } from "../reactivity"
+
+import { resetStore, setStore } from "../store"
 
 const reactNativeMock = vi.hoisted(() => {
   const testGlobal = globalThis as typeof globalThis & { __DEV__: boolean }
@@ -169,20 +165,53 @@ describe("Runtime.insets warnings", () => {
   })
 })
 
-describe("runtime insets reactivity", () => {
-  test("notifies runtime subscribers when updateInsets changes safe-area values", () => {
+describe("granular runtime bus emits", () => {
+  test("emits insets once when updateInsets changes safe-area values", () => {
     const listener = vi.fn()
-    const unsubscribe = subscribeRuntime(listener)
+    subscribeBus(["insets"], listener)
 
     updateInsets({ top: 1, right: 2, bottom: 3, left: 4 })
     updateInsets({ top: 1, right: 2, bottom: 3, left: 4 })
 
     expect(listener).toHaveBeenCalledOnce()
+    expect(listener).toHaveBeenCalledWith("insets")
+  })
 
-    unsubscribe()
-    updateInsets({ top: 5, right: 6, bottom: 7, left: 8 })
+  test("emits dimensions but not insets when Dimensions changes", () => {
+    const dimensionsListener = vi.fn()
+    const insetsListener = vi.fn()
+    subscribeBus(["dimensions"], dimensionsListener)
+    subscribeBus(["insets"], insetsListener)
 
-    expect(listener).toHaveBeenCalledOnce()
+    reactNativeMock.dimensionsListeners.forEach((trigger) => trigger())
+
+    expect(dimensionsListener).toHaveBeenCalledWith("dimensions")
+    expect(insetsListener).not.toHaveBeenCalled()
+  })
+
+  test("emits reduceMotion but not dimensions when reduce motion changes", () => {
+    const reduceMotionListener = vi.fn()
+    const dimensionsListener = vi.fn()
+    subscribeBus(["reduceMotion"], reduceMotionListener)
+    subscribeBus(["dimensions"], dimensionsListener)
+
+    reactNativeMock.reduceMotionListeners.forEach((trigger) => trigger(true))
+
+    expect(reduceMotionListener).toHaveBeenCalledWith("reduceMotion")
+    expect(dimensionsListener).not.toHaveBeenCalled()
+    expect(Runtime.reduceMotion).toBe(true)
+  })
+
+  test("emits colorScheme but not theme when Appearance changes", () => {
+    const colorSchemeListener = vi.fn()
+    const themeListener = vi.fn()
+    subscribeBus(["colorScheme"], colorSchemeListener)
+    subscribeBus(["theme"], themeListener)
+
+    reactNativeMock.appearanceListeners.forEach((trigger) => trigger({ colorScheme: "dark" }))
+
+    expect(colorSchemeListener).toHaveBeenCalledWith("colorScheme")
+    expect(themeListener).not.toHaveBeenCalled()
   })
 
   test("useRuntime reads updated insets during render", () => {
@@ -195,5 +224,28 @@ describe("runtime insets reactivity", () => {
     }
 
     expect(renderUnderProvider(createElement(RuntimeConsumer))).toContain(">24<")
+  })
+})
+
+describe("Runtime.breakpoint", () => {
+  test("returns the smallest breakpoint when the window is below the next threshold", () => {
+    reactNativeMock.window.width = 390
+    setStore({ breakpoints: { xs: 0, sm: 640, md: 768 } })
+
+    expect(Runtime.breakpoint).toBe("xs")
+  })
+
+  test("returns the largest breakpoint not exceeding the window width", () => {
+    reactNativeMock.window.width = 800
+    setStore({ breakpoints: { xs: 0, sm: 640, md: 768 } })
+
+    expect(Runtime.breakpoint).toBe("md")
+  })
+
+  test("resolves correctly when breakpoints are registered out of order", () => {
+    reactNativeMock.window.width = 700
+    setStore({ breakpoints: { md: 768, xs: 0, sm: 640 } })
+
+    expect(Runtime.breakpoint).toBe("sm")
   })
 })
