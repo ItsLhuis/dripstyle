@@ -19,8 +19,7 @@ export function responsive<T>(
   values: Partial<Record<BreakpointName, T>>,
   breakpoint: BreakpointName
 ): T | undefined {
-  const configured = getStore().breakpoints
-  const order = Object.keys(configured).sort((a, b) => configured[a]! - configured[b]!)
+  const order = getStore().sortedBreakpoints
   const currentIndex = order.indexOf(breakpoint)
 
   if (currentIndex === -1) return undefined

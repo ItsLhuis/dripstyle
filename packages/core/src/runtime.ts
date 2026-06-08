@@ -9,20 +9,24 @@ import {
   Platform
 } from "react-native"
 
+import { clearAllListeners, emit, subscribe as subscribeBus } from "./reactivity"
+
 import { getStore, setStore, warnIfInsetsAccessedBeforeMount } from "./store"
+
+import { type DependencyKey } from "./dependencies"
 
 import type { BreakpointName, RuntimeValues } from "./types"
 
 declare const __DEV__: boolean
 
 function computeBreakpoint(width: number): BreakpointName {
-  const breakpoints = getStore().breakpoints
-  const keys = Object.keys(breakpoints).sort((a, b) => breakpoints[a]! - breakpoints[b]!)
+  const store = getStore()
+  const keys = store.sortedBreakpoints
 
   let current = (keys[0] ?? "") as BreakpointName
 
   for (const key of keys) {
-    if (width >= breakpoints[key]!) {
+    if (width >= store.breakpoints[key]) {
       current = key as BreakpointName
     }
   }
@@ -35,27 +39,13 @@ type Insets = { top: number; right: number; bottom: number; left: number }
 let _insets: Insets = { top: 0, right: 0, bottom: 0, left: 0 }
 let _reduceMotion = false
 
-const runtimeListeners = new Set<() => void>()
-
-function notifyRuntime(): void {
-  runtimeListeners.forEach((listener) => {
-    listener()
-  })
-}
-
-/**
- * Subscribes to runtime environment changes (dimensions, safe area insets, reduce motion,
- * color scheme). Internal; consumed by {@link useRuntime}.
- *
- * @returns An unsubscribe function.
- */
-export function subscribeRuntime(listener: () => void): () => void {
-  runtimeListeners.add(listener)
-
-  return () => {
-    runtimeListeners.delete(listener)
-  }
-}
+/** The runtime dependency keys {@link useRuntime} subscribes to — every reactive runtime source. */
+const RUNTIME_DEPENDENCY_KEYS: DependencyKey[] = [
+  "dimensions",
+  "insets",
+  "colorScheme",
+  "reduceMotion"
+]
 
 /**
  * Updates safe area insets and notifies subscribers so `useRuntime()` consumers re-render.
@@ -75,34 +65,34 @@ export function updateInsets(insets: Insets): void {
 
   _insets = insets
 
-  notifyRuntime()
+  emit("insets")
 }
 
 /**
- * Resets runtime-only state. For use in tests only.
+ * Resets runtime-only state and clears the reactivity bus. For use in tests only.
  */
 export function resetRuntimeForTests(): void {
   _insets = { top: 0, right: 0, bottom: 0, left: 0 }
   _reduceMotion = false
-  runtimeListeners.clear()
+  clearAllListeners()
 }
 
 AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
   _reduceMotion = enabled
-  notifyRuntime()
+  emit("reduceMotion")
 })
 
 AccessibilityInfo.addEventListener("reduceMotionChanged", (enabled: boolean) => {
   _reduceMotion = enabled
-  notifyRuntime()
+  emit("reduceMotion")
 })
 
 Dimensions.addEventListener("change", () => {
-  notifyRuntime()
+  emit("dimensions")
 })
 
 Appearance.addChangeListener(() => {
-  notifyRuntime()
+  emit("colorScheme")
 })
 
 /**
@@ -238,11 +228,9 @@ export function useRuntime(): RuntimeValues {
   const [version, forceUpdate] = useReducer((current: number) => current + 1, 0)
 
   useEffect(() => {
-    const unsubscribe = subscribeRuntime(() => {
+    return subscribeBus(RUNTIME_DEPENDENCY_KEYS, () => {
       forceUpdate()
     })
-
-    return unsubscribe
   }, [])
 
   return useMemo(

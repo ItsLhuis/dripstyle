@@ -1,6 +1,6 @@
 import { useContext, type ReactElement, type ReactNode } from "react"
 
-import { ThemeContext, type ThemeContextValue } from "./context"
+import { ScopedThemeContext, ThemeContext, type ThemeContextValue } from "./context"
 
 import { getStore } from "./store"
 
@@ -46,7 +46,11 @@ const ScopedTheme = ({ theme: themeName, children }: ScopedThemeProps): ReactEle
     themeName
   }
 
-  return <ThemeContext.Provider value={scopedValue}>{children}</ThemeContext.Provider>
+  return (
+    <ThemeContext.Provider value={scopedValue}>
+      <ScopedThemeContext.Provider value={themeName}>{children}</ScopedThemeContext.Provider>
+    </ThemeContext.Provider>
+  )
 }
 
 export { ScopedTheme }

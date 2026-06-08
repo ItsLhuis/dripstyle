@@ -1,12 +1,26 @@
-import { useContext, useEffect, useMemo } from "react"
+import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react"
 
-import { ThemeContext, type ThemeContextValue } from "./context"
-
+import {
+  resolveActiveTheme,
+  ScopedThemeContext,
+  ThemeContext,
+  type ThemeContextValue
+} from "./context"
+import { createTrackingContext, DEPENDENCY_KEYS, type DependencyKey } from "./dependencies"
 import { processStyleSheet } from "./processing"
+import { subscribe as subscribeBus } from "./reactivity"
+import { Runtime } from "./runtime"
+import { getStore } from "./store"
 
-import { useRuntime } from "./runtime"
+import type {
+  ProcessedStyleSheet,
+  RuntimeValues,
+  StyleSheetDefinition,
+  Theme,
+  ThemeName
+} from "./types"
 
-import type { ProcessedStyleSheet, StyleSheetDefinition, Theme, ThemeName } from "./types"
+declare const __DEV__: boolean
 
 type SharedValue<T> = { value: T }
 
@@ -59,10 +73,19 @@ export function useTheme(): UseThemeReturn {
 }
 
 /**
- * Returns processed styles for a stylesheet definition, reacting to theme changes.
+ * Returns processed styles for a stylesheet definition with dependency-based selective
+ * re-rendering.
  *
- * Plain-object stylesheets (no factory function) never trigger re-renders on
- * theme change. Factory stylesheets re-process only when theme or runtime changes.
+ * The component re-renders only when a theme/runtime value the stylesheet **actually reads**
+ * changes:
+ *
+ * - **Plain-object stylesheets** record no dependency and never re-render on a theme or runtime
+ *   change — they are returned as-is with referential stability.
+ * - **Factory stylesheets** run against tracking proxies that record which coarse dependencies
+ *   (`theme`, `dimensions`, `insets`, `colorScheme`, `reduceMotion`) they touch, then subscribe to
+ *   exactly those. A factory reading only `theme` ignores resize/inset/color-scheme events; one
+ *   reading only `runtime.insets` ignores theme changes. Inline style functions and `createVariant`
+ *   configs contribute their dependencies too, accumulated across renders.
  *
  * Must be called inside `<ThemeProvider>`.
  *
@@ -73,13 +96,63 @@ export function useTheme(): UseThemeReturn {
  * ```
  */
 export function useStyles<T extends StyleSheetDefinition>(stylesheet: T): ProcessedStyleSheet<T> {
-  const { theme } = useContext(ThemeContext)
+  const dependenciesRef = useRef<Set<DependencyKey> | null>(null)
+  const versionRef = useRef(0)
+  const lastStylesheetRef = useRef<T>(stylesheet)
 
-  const runtime = useRuntime()
+  const scopedThemeName = useContext(ScopedThemeContext)
+
+  const isStatic = typeof stylesheet !== "function"
+
+  if (!dependenciesRef.current || lastStylesheetRef.current !== stylesheet) {
+    dependenciesRef.current = new Set()
+    lastStylesheetRef.current = stylesheet
+  }
+
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (isStatic) return () => {}
+
+      return subscribeBus(DEPENDENCY_KEYS, (key) => {
+        if (!dependenciesRef.current?.has(key)) return
+
+        versionRef.current += 1
+        onStoreChange()
+      })
+    },
+    [isStatic]
+  )
+
+  const version = useSyncExternalStore(
+    subscribe,
+    () => versionRef.current,
+    () => versionRef.current
+  )
 
   return useMemo(() => {
-    return processStyleSheet(stylesheet, { theme, runtime })
-  }, [stylesheet, theme, runtime])
+    if (__DEV__ && scopedThemeName === undefined) {
+      throw new Error(
+        "[dripstyle] useStyles() must be called inside <ThemeProvider>. " +
+          "Wrap your app root with <ThemeProvider>."
+      )
+    }
+
+    if (typeof stylesheet !== "function") {
+      return stylesheet as unknown as ProcessedStyleSheet<T>
+    }
+
+    const realTheme =
+      scopedThemeName === null || scopedThemeName === undefined
+        ? resolveActiveTheme()
+        : ((getStore().registeredThemes[scopedThemeName] as Theme) ?? ({} as Theme))
+
+    const trackingContext = createTrackingContext((key) => dependenciesRef.current?.add(key), {
+      theme: realTheme,
+      runtime: Runtime as unknown as RuntimeValues
+    })
+
+    return processStyleSheet(stylesheet, trackingContext)
+  }, [stylesheet, version, scopedThemeName])
 }
 
 /**

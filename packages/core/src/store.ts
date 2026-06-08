@@ -1,8 +1,11 @@
+import { emit } from "./reactivity"
+
 declare const __DEV__: boolean
 
 type StoreState = {
   registeredThemes: Record<string, unknown>
   breakpoints: Record<string, number>
+  sortedBreakpoints: string[]
   activeThemeName: string | null
   adaptiveThemes: boolean
   isConfigured: boolean
@@ -14,6 +17,7 @@ type StoreState = {
 const store: StoreState = {
   registeredThemes: {},
   breakpoints: {},
+  sortedBreakpoints: [],
   activeThemeName: null,
   adaptiveThemes: false,
   isConfigured: false,
@@ -33,7 +37,22 @@ export function getStore(): Readonly<StoreState> {
  */
 export function setStore(partial: Partial<Omit<StoreState, "listeners">>): void {
   Object.assign(store, partial)
+
+  if ("breakpoints" in partial) {
+    store.sortedBreakpoints = Object.keys(store.breakpoints).sort(
+      (first, second) => store.breakpoints[first] - store.breakpoints[second]
+    )
+  }
+
   notifyListeners()
+
+  if (
+    "registeredThemes" in partial ||
+    "activeThemeName" in partial ||
+    "adaptiveThemes" in partial
+  ) {
+    emit("theme")
+  }
 }
 
 /**
@@ -81,6 +100,7 @@ export function notifyListeners(): void {
 export function resetStore(): void {
   store.registeredThemes = {}
   store.breakpoints = {}
+  store.sortedBreakpoints = []
   store.activeThemeName = null
   store.adaptiveThemes = false
   store.isConfigured = false
