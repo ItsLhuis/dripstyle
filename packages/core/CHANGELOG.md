@@ -5,6 +5,36 @@ All notable changes to `@dripstyle/core` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-06-08
+
+### Fixed
+
+- `Runtime.insets` / `useRuntime().insets` now report real safe-area insets on device instead of
+  staying at `{ top: 0, bottom: 0, ... }`. The optional-peer guards
+  (`require("react-native-safe-area-context")` and `require("react-native-reanimated")`) were
+  compiled to esbuild's `__require()` shim, which Metro's static dependency collector does not
+  recognize as a `require` — so Metro never bundled those modules and the guarded call threw at
+  runtime. `SafeAreaProvider` therefore looked "not installed," so `InsetSync` never mounted (and
+  `useAnimatedTheme()` always threw) even when the peers were present, while a nested navigator's
+  own `SafeAreaProvider` made the rest of the tree look correct. The CJS build now emits a plain,
+  Metro-collectable `require(...)`, the package resolves its CJS build under the `react-native`
+  condition, `InsetSync` receives `initialMetrics={initialWindowMetrics}`, and `_insets` is seeded
+  from the native window metrics at module load so the value is correct from the first render
+  regardless of where `SafeAreaProvider` sits in the tree.
+
+### Changed
+
+- Dependency-based selective re-rendering for `useStyles()`. A component now re-renders only when
+  the specific theme/runtime values its stylesheet actually reads change, instead of on every global
+  change. Plain-object stylesheets record no dependency and never re-render from a theme or runtime
+  change; factory stylesheets run against tracking proxies that record which coarse dependencies
+  (`theme`, `dimensions`, `insets`, `colorScheme`, `reduceMotion`) they touch and subscribe to only
+  those. A theme-only factory ignores rotations and inset changes; an insets-only factory ignores
+  theme switches. Inline style functions and `createVariant()` configs contribute their dependencies
+  too. The public API is unchanged — components simply render less.
+- Breakpoint ordering is precomputed when breakpoints are registered instead of being re-sorted on
+  every `Runtime.breakpoint` read and `responsive()` call.
+
 ## [1.2.5] - 2026-06-06
 
 ### Fixed
